@@ -7,8 +7,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 
-// TODO: connect to verification service when API is available
-
 interface VerificationResult {
   valid: boolean;
   code?: string;
@@ -27,13 +25,31 @@ export default function AdminCodesPage() {
     if (!code.trim()) return;
     setIsLoading(true);
 
-    // TODO: call actual verification action
-    // For now, show placeholder
-    setResult({
-      valid: false,
-      message: '검증 서비스가 준비 중입니다.',
-    });
-    setIsLoading(false);
+    try {
+      const res = await fetch(`/api/verify?code=${encodeURIComponent(code.trim())}`);
+      const json = await res.json();
+
+      if (!res.ok || !json.success) {
+        setResult({
+          valid: false,
+          message: json.error?.message ?? '검증에 실패했습니다.',
+        });
+      } else {
+        const d = json.data;
+        setResult({
+          valid: d.verified,
+          code: d.code,
+          status: d.status,
+          message: d.verified ? '정품 인증 확인' : `코드 상태: ${d.status}`,
+          productName: d.treatment?.productName ?? undefined,
+          lotNumber: d.treatment?.lotNumber ?? undefined,
+        });
+      }
+    } catch {
+      setResult({ valid: false, message: '서버에 연결할 수 없습니다.' });
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   return (

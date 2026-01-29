@@ -28,12 +28,35 @@ export default function PublicInquiryPage() {
     if (!phone.trim()) return;
     setIsLoading(true);
 
-    // TODO: call public inquiry API
-    setResult({
-      found: false,
-      message: '이력 조회 서비스가 준비 중입니다. 전화번호를 입력하면 시술 이력을 확인할 수 있습니다.',
-    });
-    setIsLoading(false);
+    try {
+      const normalized = phone.trim().replace(/[^0-9]/g, '');
+      const res = await fetch(`/api/inquiry?phone=${encodeURIComponent(normalized)}`);
+      const json = await res.json();
+
+      if (!res.ok || !json.success) {
+        setResult({
+          found: false,
+          message: json.error?.message ?? '조회에 실패했습니다.',
+        });
+      } else {
+        const records = json.data?.records ?? [];
+        setResult({
+          found: records.length > 0,
+          treatments: records.map((r: { code?: string; treatmentDate?: string; hospitalName?: string; status?: string }, i: number) => ({
+            id: r.code ?? String(i),
+            treatmentDate: r.treatmentDate ?? '날짜 미상',
+            hospitalName: r.hospitalName ?? '병원 미상',
+            productName: r.code ?? '코드 없음',
+            quantity: 1,
+          })),
+          message: records.length === 0 ? '시술 이력이 없습니다.' : undefined,
+        });
+      }
+    } catch {
+      setResult({ found: false, message: '서버에 연결할 수 없습니다.' });
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   return (

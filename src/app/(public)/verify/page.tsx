@@ -30,12 +30,33 @@ export default function PublicVerifyPage() {
     if (!code.trim()) return;
     setIsLoading(true);
 
-    // TODO: call public verification API
-    setResult({
-      valid: false,
-      message: '검증 서비스가 준비 중입니다. 가상코드를 입력하면 제품 정보를 확인할 수 있습니다.',
-    });
-    setIsLoading(false);
+    try {
+      const res = await fetch(`/api/verify?code=${encodeURIComponent(code.trim())}`);
+      const json = await res.json();
+
+      if (!res.ok || !json.success) {
+        setResult({
+          valid: false,
+          message: json.error?.message ?? '검증에 실패했습니다.',
+        });
+      } else {
+        const d = json.data;
+        setResult({
+          valid: d.verified,
+          code: d.code,
+          status: d.status,
+          message: d.verified ? '정품 인증이 확인되었습니다.' : `코드 상태: ${d.status}`,
+          productName: d.treatment?.productName ?? undefined,
+          manufacturerName: d.treatment?.manufacturerName ?? undefined,
+          lotNumber: d.treatment?.lotNumber ?? undefined,
+          expiryDate: d.treatment?.expiryDate ?? undefined,
+        });
+      }
+    } catch {
+      setResult({ valid: false, message: '서버에 연결할 수 없습니다.' });
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   return (
