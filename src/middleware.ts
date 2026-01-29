@@ -10,10 +10,10 @@ const PUBLIC_PATHS = ['/login', '/register', '/forgot-password', '/reset-passwor
 
 // 역할별 허용 경로 매핑
 const ROLE_PATH_MAP: Record<string, string> = {
-  MANUFACTURER: '/manufacturer',
-  DISTRIBUTOR: '/distributor',
-  HOSPITAL: '/hospital',
-  ADMIN: '/admin',
+  MANUFACTURER: '/manufacturer/dashboard',
+  DISTRIBUTOR: '/distributor/dashboard',
+  HOSPITAL: '/hospital/dashboard',
+  ADMIN: '/admin/dashboard',
 };
 
 // 공개 API (미들웨어 인증 스킵, rate limiting은 라우트 자체에서 처리)
@@ -108,7 +108,7 @@ function addSecurityHeaders(response: NextResponse): void {
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: https:",
     "font-src 'self'",
-    "connect-src 'self' https://*.supabase.co https://kakaoapi.aligo.in",
+    "connect-src 'self' http://127.0.0.1:* https://*.supabase.co https://kakaoapi.aligo.in",
     "frame-ancestors 'none'",
     "base-uri 'self'",
     "form-action 'self'",

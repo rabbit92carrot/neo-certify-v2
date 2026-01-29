@@ -1,12 +1,14 @@
 'use client';
 
 import Link from 'next/link';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { registerCredentialsSchema, type RegisterCredentialsData } from '@/schemas/auth';
+import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import {
   Form,
   FormControl,
@@ -17,13 +19,47 @@ import {
 } from '@/components/ui/form';
 
 export default function RegisterPage() {
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+
   const form = useForm<RegisterCredentialsData>({
     resolver: zodResolver(registerCredentialsSchema),
     defaultValues: { email: '', password: '', confirmPassword: '' },
   });
 
-  async function onSubmit(_data: RegisterCredentialsData) {
-    // TODO: integrate with auth service
+  async function onSubmit(data: RegisterCredentialsData) {
+    setError(null);
+    const supabase = createClient();
+
+    const { error: signUpError } = await supabase.auth.signUp({
+      email: data.email,
+      password: data.password,
+    });
+
+    if (signUpError) {
+      setError(signUpError.message);
+      return;
+    }
+
+    setSuccess(true);
+  }
+
+  if (success) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>회원가입 완료</CardTitle>
+          <CardDescription>
+            이메일 확인 링크를 보내드렸습니다. 이메일을 확인해주세요.
+          </CardDescription>
+        </CardHeader>
+        <CardFooter>
+          <Link href="/login" className="text-sm text-blue-600 hover:underline">
+            로그인으로 돌아가기
+          </Link>
+        </CardFooter>
+      </Card>
+    );
   }
 
   return (
@@ -34,6 +70,11 @@ export default function RegisterPage() {
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            {error && (
+              <div role="alert" className="rounded-md bg-red-50 p-3 text-sm text-red-600">
+                {error}
+              </div>
+            )}
             <FormField
               control={form.control}
               name="email"

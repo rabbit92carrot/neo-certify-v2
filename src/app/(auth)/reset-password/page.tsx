@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -25,14 +26,26 @@ type ResetFormData = z.infer<typeof resetSchema>;
 
 export default function ResetPasswordPage() {
   const [sent, setSent] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const form = useForm<ResetFormData>({
     resolver: zodResolver(resetSchema),
     defaultValues: { email: '' },
   });
 
-  async function onSubmit(_data: ResetFormData) {
-    // TODO: integrate with auth service
+  async function onSubmit(data: ResetFormData) {
+    setError(null);
+    const supabase = createClient();
+
+    const { error: resetError } = await supabase.auth.resetPasswordForEmail(data.email, {
+      redirectTo: `${window.location.origin}/auth/callback?type=recovery`,
+    });
+
+    if (resetError) {
+      setError(resetError.message);
+      return;
+    }
+
     setSent(true);
   }
 
@@ -61,6 +74,11 @@ export default function ResetPasswordPage() {
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            {error && (
+              <div role="alert" className="rounded-md bg-red-50 p-3 text-sm text-red-600">
+                {error}
+              </div>
+            )}
             <FormField
               control={form.control}
               name="email"

@@ -9,18 +9,18 @@
 -- NOTE: Supabase local dev에서는 auth.users에 직접 삽입 가능
 -- 프로덕션에서는 supabase.auth.admin.createUser() 사용
 
-INSERT INTO auth.users (id, instance_id, email, encrypted_password, email_confirmed_at, role, aud, created_at, updated_at, raw_app_meta_data, raw_user_meta_data)
+INSERT INTO auth.users (id, instance_id, email, encrypted_password, email_confirmed_at, role, aud, created_at, updated_at, raw_app_meta_data, raw_user_meta_data, confirmation_token, recovery_token, email_change_token_new, email_change_token_current, email_change, phone_change, phone_change_token, reauthentication_token)
 VALUES
   -- 관리자
-  ('a0000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000000', 'admin@neocert.com',     crypt('admin123', gen_salt('bf')), now(), 'authenticated', 'authenticated', now(), now(), '{"provider":"email","providers":["email"]}', '{}'),
+  ('a0000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000000', 'admin@neocert.com',     crypt('admin123', gen_salt('bf')), now(), 'authenticated', 'authenticated', now(), now(), '{"provider":"email","providers":["email"]}', '{}', '', '', '', '', '', '', '', ''),
   -- 제조사
-  ('a0000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000000', 'meditech@neocert.com',  crypt('test1234', gen_salt('bf')), now(), 'authenticated', 'authenticated', now(), now(), '{"provider":"email","providers":["email"]}', '{}'),
+  ('a0000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000000', 'meditech@neocert.com',  crypt('test1234', gen_salt('bf')), now(), 'authenticated', 'authenticated', now(), now(), '{"provider":"email","providers":["email"]}', '{}', '', '', '', '', '', '', '', ''),
   -- 유통사
-  ('a0000000-0000-0000-0000-000000000003', '00000000-0000-0000-0000-000000000000', 'supply@neocert.com',    crypt('test1234', gen_salt('bf')), now(), 'authenticated', 'authenticated', now(), now(), '{"provider":"email","providers":["email"]}', '{}'),
+  ('a0000000-0000-0000-0000-000000000003', '00000000-0000-0000-0000-000000000000', 'supply@neocert.com',    crypt('test1234', gen_salt('bf')), now(), 'authenticated', 'authenticated', now(), now(), '{"provider":"email","providers":["email"]}', '{}', '', '', '', '', '', '', '', ''),
   -- 병원1
-  ('a0000000-0000-0000-0000-000000000004', '00000000-0000-0000-0000-000000000000', 'seoul-ps@neocert.com',  crypt('test1234', gen_salt('bf')), now(), 'authenticated', 'authenticated', now(), now(), '{"provider":"email","providers":["email"]}', '{}'),
+  ('a0000000-0000-0000-0000-000000000004', '00000000-0000-0000-0000-000000000000', 'seoul-ps@neocert.com',  crypt('test1234', gen_salt('bf')), now(), 'authenticated', 'authenticated', now(), now(), '{"provider":"email","providers":["email"]}', '{}', '', '', '', '', '', '', '', ''),
   -- 병원2
-  ('a0000000-0000-0000-0000-000000000005', '00000000-0000-0000-0000-000000000000', 'gangnam@neocert.com',   crypt('test1234', gen_salt('bf')), now(), 'authenticated', 'authenticated', now(), now(), '{"provider":"email","providers":["email"]}', '{}')
+  ('a0000000-0000-0000-0000-000000000005', '00000000-0000-0000-0000-000000000000', 'gangnam@neocert.com',   crypt('test1234', gen_salt('bf')), now(), 'authenticated', 'authenticated', now(), now(), '{"provider":"email","providers":["email"]}', '{}', '', '', '', '', '', '', '', '')
 ON CONFLICT (id) DO NOTHING;
 
 -- auth.identities (Supabase 필수)
