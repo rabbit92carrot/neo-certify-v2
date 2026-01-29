@@ -74,8 +74,8 @@ export default function LoginPage() {
     }
 
     const dashboardPath = ROLE_DASHBOARD_MAP[org.type] ?? '/';
-    router.push(dashboardPath);
-    router.refresh();
+    // Full page reload to ensure middleware picks up auth cookies
+    window.location.href = dashboardPath;
   }
 
   return (
