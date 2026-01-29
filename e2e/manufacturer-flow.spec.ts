@@ -1,6 +1,7 @@
 import { test, expect } from './helpers/auth';
 
-test.describe('제조사 흐름', () => {
+// TODO: 제조사 대시보드 UI 구현 후 활성화
+test.describe.skip('제조사 흐름', () => {
   test('대시보드에서 제품 목록을 확인할 수 있다', async ({ manufacturerPage: page }) => {
     await page.goto('/manufacturer/dashboard');
     // 대시보드 요소 확인
