@@ -1,85 +1,74 @@
 import { test, expect } from './helpers/auth';
 
-// TODO: 제조사 대시보드 UI 구현 후 활성화
-test.describe.skip('제조사 흐름', () => {
-  test('대시보드에서 제품 목록을 확인할 수 있다', async ({ manufacturerPage: page }) => {
-    await page.goto('/manufacturer/dashboard');
-    // 대시보드 요소 확인
-    await expect(page.locator('text=코 임플란트').first()).toBeVisible();
+test.describe('제조사 흐름', () => {
+  test('제품 목록 페이지가 로드된다', async ({ manufacturerPage: page }) => {
+    await page.goto('/manufacturer/products');
+    await expect(page.locator('h1', { hasText: '제품 관리' })).toBeVisible();
+    // 시드 데이터에 제품이 있어야 함
+    await expect(page.locator('table')).toBeVisible();
   });
 
   test('새 제품을 등록할 수 있다', async ({ manufacturerPage: page }) => {
+    await page.goto('/manufacturer/products/new');
+    await expect(page.locator('h1', { hasText: '제품 등록' })).toBeVisible();
+
+    // ProductForm 필드 (react-hook-form 기반)
+    await page.getByLabel('제품명').fill('테스트 보형물 E2E');
+    await page.getByLabel('UDI-DI').fill('MT-E2E-' + Date.now());
+    await page.getByLabel('모델명').fill('MT-E2E-MODEL');
+
+    await page.getByRole('button', { name: '등록' }).click();
+
+    // 성공 시 제품 목록으로 리다이렉트
+    await page.waitForURL(/\/manufacturer\/products$/, { timeout: 15_000 });
+    await expect(page.locator('text=테스트 보형물 E2E').first()).toBeVisible();
+  });
+
+  test('제품 상세 페이지를 볼 수 있다', async ({ manufacturerPage: page }) => {
     await page.goto('/manufacturer/products');
 
-    // 제품 등록 버튼 클릭
-    await page.getByRole('button', { name: /제품 등록|새 제품|추가/ }).click();
+    // 첫 번째 제품 클릭
+    const firstProductLink = page.locator('table a').first();
+    await firstProductLink.click();
 
-    // 제품 정보 입력
-    await page.locator('[name="name"], [data-testid="product-name"]').first().fill('테스트 보형물');
-    await page.locator('[name="udi_di"], [data-testid="product-udi"]').first().fill('MT-TEST-001');
-    await page.locator('[name="model_name"], [data-testid="product-model"]').first().fill('MT-T001');
-
-    // 저장
-    await page.getByRole('button', { name: /저장|등록|확인/ }).click();
-
-    // 성공 확인
-    await expect(page.locator('text=테스트 보형물').first()).toBeVisible({ timeout: 10_000 });
+    // 상세 페이지 확인
+    await expect(page.locator('text=제품 정보')).toBeVisible();
+    await expect(page.locator('text=UDI-DI')).toBeVisible();
   });
 
   test('Lot을 생성할 수 있다', async ({ manufacturerPage: page }) => {
-    await page.goto('/manufacturer/lots');
+    await page.goto('/manufacturer/production');
+    await expect(page.locator('h1', { hasText: '생산 관리' })).toBeVisible();
 
-    await page.getByRole('button', { name: /Lot 생성|새 Lot|추가/ }).click();
-
-    // 제품 선택
-    await page.locator('[data-testid="product-select"], select[name="product_id"]').first().click();
-    await page.locator('text=코 임플란트').first().click();
+    // 제품 선택 (Select 컴포넌트)
+    await page.locator('button[role="combobox"]').first().click();
+    await page.locator('[role="option"]').first().click();
 
     // Lot 정보 입력
-    await page.locator('[name="lot_number"], [data-testid="lot-number"]').first().fill('LOT-TEST-001');
-    await page.locator('[name="quantity"], [data-testid="lot-quantity"]').first().fill('5');
+    const lotNumber = 'LOT-E2E-' + Date.now();
+    await page.locator('#lotNumber').fill(lotNumber);
+    await page.locator('#quantity').fill('5');
 
-    // 날짜 입력
-    const today = new Date().toISOString().split('T')[0];
-    const futureDate = new Date(Date.now() + 365 * 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-    await page.locator('[name="manufacture_date"]').first().fill(today);
-    await page.locator('[name="expiry_date"]').first().fill(futureDate);
+    const today = new Date().toISOString().split('T')[0]!;
+    const future = new Date(Date.now() + 365 * 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]!;
+    await page.locator('#manufactureDate').fill(today);
+    await page.locator('#expiryDate').fill(future);
 
-    await page.getByRole('button', { name: /저장|생성|확인/ }).click();
+    await page.getByRole('button', { name: /Lot 생성/ }).click();
 
-    await expect(page.locator('text=LOT-TEST-001').first()).toBeVisible({ timeout: 10_000 });
+    // 성공 토스트 확인
+    await expect(page.locator('text=/Lot이 생성되었습니다/').first()).toBeVisible({ timeout: 15_000 });
   });
 
-  test('가상코드를 생성할 수 있다', async ({ manufacturerPage: page }) => {
-    await page.goto('/manufacturer/lots');
-
-    // 기존 Lot 선택하여 코드 생성
-    await page.locator('text=LOT-NIS-2024-001').first().click();
-    await page.getByRole('button', { name: /코드 생성|추가 생산|수량 추가/ }).click();
-
-    await page.locator('[name="quantity"], [data-testid="additional-quantity"]').first().fill('3');
-    await page.getByRole('button', { name: /생성|확인/ }).click();
-
-    // 성공 메시지 확인
-    await expect(page.locator('text=/성공|완료|생성/').first()).toBeVisible({ timeout: 10_000 });
+  test('출고 관리 페이지가 로드된다', async ({ manufacturerPage: page }) => {
+    await page.goto('/manufacturer/shipment');
+    await expect(page.locator('h1', { hasText: '출고 관리' })).toBeVisible();
+    await expect(page.locator('text=출고 등록')).toBeVisible();
   });
 
-  test('유통사로 출고할 수 있다', async ({ manufacturerPage: page }) => {
-    await page.goto('/manufacturer/shipments');
-
-    await page.getByRole('button', { name: /출고|새 출고/ }).click();
-
-    // 수신 조직 선택
-    await page.locator('[data-testid="to-org-select"], select[name="to_org"]').first().click();
-    await page.locator('text=한국메디컬서플라이').first().click();
-
-    // 제품/수량 선택
-    await page.locator('[data-testid="product-select"]').first().click();
-    await page.locator('text=코 임플란트').first().click();
-    await page.locator('[name="quantity"], [data-testid="shipment-quantity"]').first().fill('2');
-
-    await page.getByRole('button', { name: /출고|확인|전송/ }).click();
-
-    await expect(page.locator('text=/성공|완료|출고/').first()).toBeVisible({ timeout: 10_000 });
+  test('재고 현황 페이지가 로드된다', async ({ manufacturerPage: page }) => {
+    await page.goto('/manufacturer/inventory');
+    await expect(page.locator('h1', { hasText: '재고 현황' })).toBeVisible();
+    await expect(page.locator('table')).toBeVisible();
   });
 });
